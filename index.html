@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html style="background:transparent;color:white;font-size:10vw;text-align:center">
+<body>
+  <div id="vagas">Carregando...</div>
+  <script>
+    fetch("https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga/records?select=plazas_libres&where=nombre='PT751'")
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById('vagas').innerText = d.results[0].plazas_libres + " VAGAS";
+      });
+  </script>
+</body>
+</html>
