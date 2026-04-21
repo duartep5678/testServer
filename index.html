@@ -46,13 +46,13 @@
   <div id="vagas">--</div>
   <p>Estacionamento</p>
   <script>
-    let spots = Math.floor(Math.random() * 500) + 50;
+    let spots = Math.floor(Math.random() * 251);
 
     const randomDelay = () => Math.floor(Math.random() * 4000) + 1000;
 
     function update() {
-      const change = Math.floor(Math.random() * 251);
-      spots = Math.max(0, Math.random() < 0.5 ? spots - change : spots + change);
+      const change = Math.floor(Math.random() * 5) + 1;
+      spots = Math.min(250, Math.max(0, Math.random() < 0.5 ? spots - change : spots + change));
 
       const el = document.getElementById('vagas');
       el.innerText = spots;
