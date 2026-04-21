@@ -1,13 +1,69 @@
 <!DOCTYPE html>
-<html style="background:transparent;color:white;font-size:10vw;text-align:center">
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estacionamento</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a2e;
+      color: #eaeaea;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      font-size: 2vw;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #a0a0c0;
+      margin-bottom: 0.5em;
+    }
+    #vagas {
+      font-size: 20vw;
+      font-weight: bold;
+      color: #ffffff;
+      line-height: 1;
+      transition: color 0.4s;
+    }
+    #vagas.updated {
+      color: #7ec8e3;
+    }
+    p {
+      margin-top: 0.5em;
+      font-size: 1.5vw;
+      color: #a0a0c0;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
 <body>
-  <div id="vagas">Carregando...</div>
+  <h1>Lugares Disponíveis</h1>
+  <div id="vagas">--</div>
+  <p>Estacionamento</p>
   <script>
-    fetch("https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga/records?select=plazas_libres&where=nombre='PT751'")
-      .then(r => r.json())
-      .then(d => {
-        document.getElementById('vagas').innerText = d.results[0].plazas_libres + " VAGAS";
-      });
+    let spots = Math.floor(Math.random() * 500) + 50;
+
+    const randomDelay = () => Math.floor(Math.random() * 4000) + 1000;
+
+    function update() {
+      const change = Math.floor(Math.random() * 251);
+      spots = Math.max(0, Math.random() < 0.5 ? spots - change : spots + change);
+
+      const el = document.getElementById('vagas');
+      el.innerText = spots;
+      el.classList.add('updated');
+      setTimeout(() => el.classList.remove('updated'), 400);
+
+      setTimeout(update, randomDelay());
+    }
+
+    document.getElementById('vagas').innerText = spots;
+    setTimeout(update, randomDelay());
   </script>
 </body>
 </html>
