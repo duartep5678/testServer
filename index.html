@@ -1,69 +1,84 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estacionamento</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Parking LED — PRAÇA LISBOA (PT751)</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background: #1a1a2e;
-      color: #eaeaea;
-      font-family: Arial, sans-serif;
-    }
-    h1 {
-      font-size: 2vw;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #a0a0c0;
-      margin-bottom: 0.5em;
-    }
-    #vagas {
-      font-size: 20vw;
-      font-weight: bold;
-      color: #ffffff;
-      line-height: 1;
-      transition: color 0.4s;
-    }
-    #vagas.updated {
-      color: #7ec8e3;
-    }
-    p {
-      margin-top: 0.5em;
-      font-size: 1.5vw;
-      color: #a0a0c0;
-      letter-spacing: 0.1em;
-    }
+    body { margin:0; font-family: system-ui, Arial, sans-serif; background:#000; color:#fff; }
+    .wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .card { text-align:center; padding:6vh 6vw; }
+    .park { font-size:5vw; font-weight:700; line-height:1.1; }
+    .free { margin-top:3vh; font-size:14vw; font-weight:900; letter-spacing:0.02em; }
+    .label { font-size:3vw; opacity:0.85; margin-top:1vh; }
+    .meta { margin-top:3vh; font-size:2.5vw; opacity:0.7; }
+    .err { color:#ff6b6b; font-size:3vw; margin-top:2vh; }
   </style>
 </head>
 <body>
-  <h1>Lugares Disponíveis</h1>
-  <div id="vagas">--</div>
-  <p>Estacionamento</p>
-  <script>
-    let spots = Math.floor(Math.random() * 251);
+  <div class="wrap">
+    <div class="card">
+      <div class="park" id="parkName">PRAÇA LISBOA (PT751)</div>
+      <div class="free" id="freeSpots">—</div>
+      <div class="label">lugares livres</div>
+      <div class="meta" id="updated">A atualizar…</div>
+      <div class="err" id="error" style="display:none;"></div>
+    </div>
+  </div>
 
-    const randomDelay = () => Math.floor(Math.random() * 4000) + 1000;
+<script>
+  const PARK_ID = "PT751";
+  const REFRESH_MS = 5000; // 5 em 5 segundos
 
-    function update() {
-      const change = Math.floor(Math.random() * 5) + 1;
-      spots = Math.min(250, Math.max(0, Math.random() < 0.5 ? spots - change : spots + change));
+  const url = new URL("https://saba.opendatasoft.com/api/records/1.0/search/");
+  url.searchParams.set("dataset", "pt_carga-aparcamentos");
+  url.searchParams.set("refine.id", PARK_ID);
+  url.searchParams.set("rows", "1");
 
-      const el = document.getElementById('vagas');
-      el.innerText = spots;
-      el.classList.add('updated');
-      setTimeout(() => el.classList.remove('updated'), 400);
+  const elFree = document.getElementById("freeSpots");
+  const elUpdated = document.getElementById("updated");
+  const elError = document.getElementById("error");
+  const elPark = document.getElementById("parkName");
 
-      setTimeout(update, randomDelay());
+  function showError(msg) {
+    elError.style.display = "block";
+    elError.textContent = msg;
+  }
+  function clearError() {
+    elError.style.display = "none";
+    elError.textContent = "";
+  }
+
+  async function refresh() {
+    try {
+      clearError();
+
+      // no-store para evitar cache no browser/controladora
+      const res = await fetch(url.toString(), { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      const fields = data.records?.[0]?.fields;
+      if (!fields) throw new Error("Sem registos para este parque");
+
+      // Ajusta nomes de campos caso o dataset use variações
+      const free = fields.plazas_libres;
+      const name = fields.aparcamiento_desc ?? fields.nombre ?? "Parque";
+      const time = fields.hora ?? fields.dia_y_hora ?? "";
+
+      elPark.textContent = `${name} (${PARK_ID})`;
+      elFree.textContent = (free !== undefined && free !== null) ? free : "—";
+      elUpdated.textContent = time
+        ? `Atualizado: ${time} | refresh: 5s`
+        : `Atualizado: ${new Date().toLocaleString()} | refresh: 5s`;
+    } catch (e) {
+      showError("Erro a obter dados: " + e.message);
+      elUpdated.textContent = `Última tentativa: ${new Date().toLocaleString()} | refresh: 5s`;
     }
+  }
 
-    document.getElementById('vagas').innerText = spots;
-    setTimeout(update, randomDelay());
-  </script>
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+</script>
 </body>
 </html>
