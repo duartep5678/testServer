@@ -30,9 +30,10 @@
   const PARK_CODE = "PT751";
   const REFRESH_MS = 5000;
 
+  // Nota: o dataset id correto (como no teu teste) é "pt_carga-aparcamientos"
   const url = new URL("https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga-aparcamientos/records");
   url.searchParams.set("limit", "1");
-  url.searchParams.set("where", `regimen_operativo="${PARK_CODE}"`);
+  url.searchParams.set("where", `regimen_operativo=\"${PARK_CODE}\"`);
 
   const elFree = document.getElementById("freeSpots");
   const elUpdated = document.getElementById("updated");
