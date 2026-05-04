@@ -8,8 +8,8 @@
     body { margin:0; font-family: system-ui, Arial, sans-serif; background:#000; color:#fff; }
     .wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
     .card { text-align:center; padding:6vh 6vw; }
-    .park { font-size:5vw; font-weight:700; line-height:1.1; }
-    .free { margin-top:3vh; font-size:14vw; font-weight:900; letter-spacing:0.02em; }
+    .park { font-size:5vw; font-weight:800; }
+    .free { margin-top:3vh; font-size:14vw; font-weight:900; }
     .label { font-size:3vw; opacity:0.85; margin-top:1vh; }
     .meta { margin-top:3vh; font-size:2.5vw; opacity:0.7; }
     .err { color:#ff6b6b; font-size:3vw; margin-top:2vh; }
@@ -18,7 +18,7 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="park" id="parkName">PRAÇA LISBOA (PT751)</div>
+      <div class="park" id="parkName">A carregar…</div>
       <div class="free" id="freeSpots">—</div>
       <div class="label">lugares livres</div>
       <div class="meta" id="updated">A atualizar…</div>
@@ -27,47 +27,39 @@
   </div>
 
 <script>
-  const PARK_ID = "PT751";
-  const REFRESH_MS = 5000; // 5 em 5 segundos
+  const PARK_CODE = "PT751";
+  const REFRESH_MS = 5000;
 
   const url = new URL("https://saba.opendatasoft.com/api/records/1.0/search/");
   url.searchParams.set("dataset", "pt_carga-aparcamentos");
-  url.searchParams.set("refine.id", PARK_ID);
   url.searchParams.set("rows", "1");
+  url.searchParams.set("refine.regimen_operativo", PARK_CODE);
 
   const elFree = document.getElementById("freeSpots");
   const elUpdated = document.getElementById("updated");
   const elError = document.getElementById("error");
   const elPark = document.getElementById("parkName");
 
-  function showError(msg) {
-    elError.style.display = "block";
-    elError.textContent = msg;
-  }
-  function clearError() {
-    elError.style.display = "none";
-    elError.textContent = "";
-  }
+  function showError(msg) { elError.style.display = "block"; elError.textContent = msg; }
+  function clearError() { elError.style.display = "none"; elError.textContent = ""; }
 
   async function refresh() {
     try {
       clearError();
-
-      // no-store para evitar cache no browser/controladora
       const res = await fetch(url.toString(), { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
       const fields = data.records?.[0]?.fields;
-      if (!fields) throw new Error("Sem registos para este parque");
+      if (!fields) throw new Error("Sem resultados para este parque");
 
-      // Ajusta nomes de campos caso o dataset use variações
-      const free = fields.plazas_libres;
+      // No teu print do console aparece "plazas" como livres
+      const free = fields.plazas ?? fields.plazas_libres ?? null;
       const name = fields.aparcamiento_desc ?? fields.nombre ?? "Parque";
       const time = fields.hora ?? fields.dia_y_hora ?? "";
 
-      elPark.textContent = `${name} (${PARK_ID})`;
-      elFree.textContent = (free !== undefined && free !== null) ? free : "—";
+      elPark.textContent = `${name} (${PARK_CODE})`;
+      elFree.textContent = (free !== null && free !== undefined) ? free : "—";
       elUpdated.textContent = time
         ? `Atualizado: ${time} | refresh: 5s`
         : `Atualizado: ${new Date().toLocaleString()} | refresh: 5s`;
