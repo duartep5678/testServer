@@ -8,7 +8,7 @@
     body { margin:0; font-family: system-ui, Arial, sans-serif; background:#000; color:#fff; }
     .wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
     .card { text-align:center; padding:6vh 6vw; }
-    .park { font-size:5vw; font-weight:800; }
+    .park { font-size:5vw; font-weight:900; letter-spacing:0.02em; }
     .free { margin-top:3vh; font-size:14vw; font-weight:900; }
     .label { font-size:3vw; opacity:0.85; margin-top:1vh; }
     .meta { margin-top:3vh; font-size:2.5vw; opacity:0.7; }
@@ -30,10 +30,9 @@
   const PARK_CODE = "PT751";
   const REFRESH_MS = 5000;
 
-  const url = new URL("https://saba.opendatasoft.com/api/records/1.0/search/");
-  url.searchParams.set("dataset", "pt_carga-aparcamentos");
-  url.searchParams.set("rows", "1");
-  url.searchParams.set("refine.regimen_operativo", PARK_CODE);
+  const url = new URL("https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga-aparcamientos/records");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("where", `regimen_operativo="${PARK_CODE}"`);
 
   const elFree = document.getElementById("freeSpots");
   const elUpdated = document.getElementById("updated");
@@ -46,23 +45,18 @@
   async function refresh() {
     try {
       clearError();
+
+      // Evitar cache (útil em controladoras/LED browsers)
       const res = await fetch(url.toString(), { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json();
-      const fields = data.records?.[0]?.fields;
-      if (!fields) throw new Error("Sem resultados para este parque");
+      const r = data.results?.[0];
+      if (!r) throw new Error("Sem resultados para este parque");
 
-      // No teu print do console aparece "plazas" como livres
-      const free = fields.plazas ?? fields.plazas_libres ?? null;
-      const name = fields.aparcamiento_desc ?? fields.nombre ?? "Parque";
-      const time = fields.hora ?? fields.dia_y_hora ?? "";
-
-      elPark.textContent = `${name} (${PARK_CODE})`;
-      elFree.textContent = (free !== null && free !== undefined) ? free : "—";
-      elUpdated.textContent = time
-        ? `Atualizado: ${time} | refresh: 5s`
-        : `Atualizado: ${new Date().toLocaleString()} | refresh: 5s`;
+      elPark.textContent = `${r.aparcamiento_desc ?? "Parque"} (${PARK_CODE})`;
+      elFree.textContent = (r.plazas ?? "—");
+      elUpdated.textContent = `Atualizado: ${r.hora ?? new Date().toISOString()} | refresh: 5s`;
     } catch (e) {
       showError("Erro a obter dados: " + e.message);
       elUpdated.textContent = `Última tentativa: ${new Date().toLocaleString()} | refresh: 5s`;
