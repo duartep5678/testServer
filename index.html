@@ -1,71 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Parking LED — PRAÇA LISBOA (PT751)</title>
-  <style>
-    body { margin:0; font-family: system-ui, Arial, sans-serif; background:#000; color:#fff; }
-    .wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; }
-    .card { text-align:center; padding:6vh 6vw; }
-    .park { font-size:5vw; font-weight:900; letter-spacing:0.02em; }
-    .free { margin-top:3vh; font-size:14vw; font-weight:900; }
-    .label { font-size:3vw; opacity:0.85; margin-top:1vh; }
-    .meta { margin-top:3vh; font-size:2.5vw; opacity:0.7; }
-    .err { color:#ff6b6b; font-size:3vw; margin-top:2vh; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parque PT751</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .card {
+            max-width: 500px;
+            margin: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .livres {
+            font-size: 48px;
+            font-weight: bold;
+            color: green;
+        }
+
+        .ocupacao {
+            font-size: 24px;
+        }
+
+        .atualizacao {
+            margin-top: 15px;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="park" id="parkName">A carregar…</div>
-      <div class="free" id="freeSpots">—</div>
-      <div class="label">lugares livres</div>
-      <div class="meta" id="updated">A atualizar…</div>
-      <div class="err" id="error" style="display:none;"></div>
-    </div>
-  </div>
+
+<div class="card">
+    <h1>Parque PT751</h1>
+
+    <div id="nome"></div>
+
+    <div class="livres" id="livres">--</div>
+
+    <div class="ocupacao" id="ocupacao">--</div>
+
+    <div class="atualizacao" id="atualizacao"></div>
+</div>
 
 <script>
-  const PARK_CODE = "PT751";
-  const REFRESH_MS = 5000;
 
-  // Nota: o dataset id correto (como no teu teste) é "pt_carga-aparcamientos"
-  const url = new URL("https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga-aparcamientos/records");
-  url.searchParams.set("limit", "1");
-  url.searchParams.set("where", `regimen_operativo=\"${PARK_CODE}\"`);
+const API_KEY = "b1437a4817312933612f3fc7d415b728f45d32ae0d7ba5bf1f3e42e1";
 
-  const elFree = document.getElementById("freeSpots");
-  const elUpdated = document.getElementById("updated");
-  const elError = document.getElementById("error");
-  const elPark = document.getElementById("parkName");
+const URL =
+`https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga-aparcamientos/records?select=aparcamiento_desc,localidad,sociedad,plazas,porcentaje_de_ocupacion&where=nombre%20%3D%20%22PT751%22&limit=10&offset=0&timezone=UTC&include_links=false&include_app_metas=false&apikey=${API_KEY}`;
 
-  function showError(msg) { elError.style.display = "block"; elError.textContent = msg; }
-  function clearError() { elError.style.display = "none"; elError.textContent = ""; }
+async function atualizar() {
 
-  async function refresh() {
     try {
-      clearError();
 
-      // Evitar cache (útil em controladoras/LED browsers)
-      const res = await fetch(url.toString(), { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const response = await fetch(URL);
 
-      const data = await res.json();
-      const r = data.results?.[0];
-      if (!r) throw new Error("Sem resultados para este parque");
+        const data = await response.json();
 
-      elPark.textContent = `${r.aparcamiento_desc ?? "Parque"} (${PARK_CODE})`;
-      elFree.textContent = (r.plazas ?? "—");
-      elUpdated.textContent = `Atualizado: ${r.hora ?? new Date().toISOString()} | refresh: 5s`;
-    } catch (e) {
-      showError("Erro a obter dados: " + e.message);
-      elUpdated.textContent = `Última tentativa: ${new Date().toLocaleString()} | refresh: 5s`;
+        const parque = data.results[0];
+
+        const total = parque.plazas;
+        const ocupacao = parque.porcentaje_de_ocupacion;
+
+        const livres = Math.round(
+            total * (100 - ocupacao) / 100
+        );
+
+        document.getElementById("nome").textContent =
+            parque.aparcamiento_desc;
+
+        document.getElementById("livres").textContent =
+            livres + " lugares livres";
+
+        document.getElementById("ocupacao").textContent =
+            ocupacao + "% ocupado";
+
+        document.getElementById("atualizacao").textContent =
+            "Atualizado: " + new Date().toLocaleTimeString();
+
+    } catch (err) {
+
+        console.error(err);
+
+        document.getElementById("livres").textContent =
+            "Erro ao obter dados";
     }
-  }
+}
 
-  refresh();
-  setInterval(refresh, REFRESH_MS);
+atualizar();
+
+setInterval(atualizar, 30000);
+
 </script>
+
 </body>
 </html>
