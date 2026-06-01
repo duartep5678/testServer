@@ -7,32 +7,51 @@
 
     <style>
         body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
             font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
 
         .card {
-            max-width: 500px;
-            margin: auto;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            text-align: center;
+            min-width: 350px;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #333;
         }
 
         .livres {
-            font-size: 48px;
+            font-size: 72px;
             font-weight: bold;
-            color: green;
+            color: #28a745;
+            margin: 20px 0;
         }
 
         .ocupacao {
-            font-size: 24px;
+            font-size: 32px;
+            color: #555;
         }
 
-        .atualizacao {
-            margin-top: 15px;
-            color: #666;
+        .updated {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .error {
+            color: red;
+            font-size: 18px;
         }
     </style>
 </head>
@@ -41,63 +60,64 @@
 <div class="card">
     <h1>Parque PT751</h1>
 
-    <div id="nome"></div>
-
     <div class="livres" id="livres">--</div>
 
     <div class="ocupacao" id="ocupacao">--</div>
 
-    <div class="atualizacao" id="atualizacao"></div>
+    <div class="updated" id="updated">
+        A carregar...
+    </div>
 </div>
 
 <script>
 
 const API_KEY = "b1437a4817312933612f3fc7d415b728f45d32ae0d7ba5bf1f3e42e1";
 
-const URL =
+const API_URL =
 `https://saba.opendatasoft.com/api/explore/v2.1/catalog/datasets/pt_carga-aparcamientos/records?select=aparcamiento_desc,localidad,sociedad,plazas,porcentaje_de_ocupacion&where=nombre%20%3D%20%22PT751%22&limit=10&offset=0&timezone=UTC&include_links=false&include_app_metas=false&apikey=${API_KEY}`;
 
-async function atualizar() {
+async function carregarDados() {
 
     try {
 
-        const response = await fetch(URL);
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+            throw new Error("Erro na API");
+        }
 
         const data = await response.json();
 
+        if (!data.results || data.results.length === 0) {
+            throw new Error("Sem resultados");
+        }
+
         const parque = data.results[0];
 
-        const total = parque.plazas;
-        const ocupacao = parque.porcentaje_de_ocupacion;
-
-        const livres = Math.round(
-            total * (100 - ocupacao) / 100
-        );
-
-        document.getElementById("nome").textContent =
-            parque.aparcamiento_desc;
-
         document.getElementById("livres").textContent =
-            livres + " lugares livres";
+            `${parque.plazas} lugares livres`;
 
         document.getElementById("ocupacao").textContent =
-            ocupacao + "% ocupado";
+            `${parque.porcentaje_de_ocupacion}% ocupado`;
 
-        document.getElementById("atualizacao").textContent =
-            "Atualizado: " + new Date().toLocaleTimeString();
+        document.getElementById("updated").textContent =
+            `Atualizado às ${new Date().toLocaleTimeString("pt-PT")}`;
 
-    } catch (err) {
+    } catch (error) {
 
-        console.error(err);
+        console.error(error);
 
-        document.getElementById("livres").textContent =
-            "Erro ao obter dados";
+        document.getElementById("livres").innerHTML =
+            '<span class="error">Erro ao carregar</span>';
+
+        document.getElementById("ocupacao").textContent = "";
     }
 }
 
-atualizar();
+carregarDados();
 
-setInterval(atualizar, 30000);
+// Atualiza a cada 30 segundos
+setInterval(carregarDados, 30000);
 
 </script>
 
